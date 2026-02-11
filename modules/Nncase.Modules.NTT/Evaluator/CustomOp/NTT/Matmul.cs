@@ -52,7 +52,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             return (lhs, rhs) switch
             {
-                (DistributedType a, DistributedType b) => new DistributedType((TensorType)VisitTensorType(target, a.TensorType, b.TensorType, true, dimInfo), target.OutSBPs, a.Placement),
+                (DistributedType a, DistributedType b) => VisitDistributedType(target, a, b, true, dimInfo),
                 (TensorType a, TensorType b) => VisitTensorType(target, a, b, true, dimInfo),
                 _ => new InvalidType($"{lhs} {rhs} not support"),
             };
@@ -78,12 +78,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         if (lhs is DistributedType a && rhs is DistributedType b)
         {
-            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != matmul.LhsSBPs[i]))
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(a.AxisPolicies[i], matmul.LhsSBPs[i], false)))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolicies[i] != matmul.RhsSBPs[i]))
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(b.AxisPolicies[i], matmul.RhsSBPs[i], false)))
             {
                 return false;
             }
@@ -155,5 +155,26 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
 
         return new TensorType(dtype, front.Concat(end).ToArray());
+    }
+
+    private IRType VisitDistributedType(MatMul target, DistributedType lhs, DistributedType rhs, bool vectorizeK, MatMulDimInfo dimInfo)
+    {
+        var tensorType = (TensorType)VisitTensorType(target, lhs.TensorType, rhs.TensorType, vectorizeK, dimInfo);
+
+        // FIXME: support rank>=2, and only support vectorize N of output.
+        var policyN = rhs.AxisPolicies[dimInfo!.Rn];
+        if (policyN is SBPSplit split)
+        {
+            policyN = SBP.S(split.Axes, split.Granularity is null ? null : split.Granularity / ((VectorType)tensorType.DType).Lanes[0]);
+        }
+
+        var policyM = lhs.AxisPolicies[dimInfo!.Lm];
+        var ndsbps = (target.TransposeA || target.TransposeB) ? new[] { policyN, policyM } : new[] { policyM, policyN };
+        if (DistributedUtility.AreSamePolicies(ndsbps, target.OutSBPs, false))
+        {
+            return new DistributedType(tensorType, ndsbps, lhs.Placement);
+        }
+
+        return new InvalidType("Please Check SBP Scheme.");
     }
 }

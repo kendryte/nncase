@@ -11,6 +11,7 @@ using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Passes.GraphPartition;
+using Nncase.Passes.Rules;
 using Nncase.Schedule;
 using QuikGraph;
 using QuikGraph.Algorithms;
@@ -116,6 +117,7 @@ public sealed class AutoTilePass : FunctionPass
 
         var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo, dimVars.ToArray());
         var post = constructor.Construct();
+        post = CompilerServices.Rewrite(post, [new UpdateBoxingTensorType()], new());
         return Task.FromResult((BaseFunction)func.With(body: post));
     }
 }

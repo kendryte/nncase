@@ -65,8 +65,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 var dinfo = vectorizedMatMul.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
-                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lk], dtb.AxisPolicies[dinfo.Rn], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lm], dtb.AxisPolicies[dinfo.Rk], false))
                 {
                     return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)call[IR.NTT.VectorizedMatMul.Scale], vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB);
                 }
@@ -78,8 +78,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
-                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^2], dtb.AxisPolicies[^2], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^1], dtb.AxisPolicies[^1], false))
                 {
                     return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)call[IR.Math.MatMul.Scale]);
                 }
@@ -237,7 +237,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         var bitcast = outBuffer.DistributedType is DistributedType ? false : true;
         if (!bitcast)
         {
-            if (inBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray().SequenceEqual(outBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray()))
+            if (DistributedUtility.AreSamePolicies(inBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray(), outBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray(), false))
             {
                 bitcast = true;
             }
@@ -246,7 +246,19 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         // If the size is not same, we cannot bitcast.
         if ((inBuffer.MemSpan.Size == outBuffer.MemSpan.Size) && (bitcast || sequeeze))
         {
-            output = inBuffer.With(name: outBuffer.Name, elemType: outBuffer.ElemType, dimensions: outBuffer.Dimensions.ToArray(), strides: outBuffer.Strides.ToArray(), distributedType: outBuffer.DistributedType);
+            var newStrides = outBuffer.Strides.ToArray();
+            if (inBuffer.MemSpan.Buffer.Location == MemoryLocation.BlockLocalData && bitcast)
+            {
+                var outType = outBuffer.DistributedType!;
+                var threadAxis = outType.Placement.Rank - 1;
+                int splitAxis = outType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));
+                if (splitAxis >= 0)
+                {
+                    Enumerable.Range(0, splitAxis).ToArray().ForEach(i => newStrides[i] *= outType.Placement.Hierarchy[threadAxis]);
+                }
+            }
+
+            output = inBuffer.With(name: outBuffer.Name, elemType: outBuffer.ElemType, dimensions: outBuffer.Dimensions.ToArray(), strides: newStrides, distributedType: outBuffer.DistributedType);
             return T.Nop();
         }
         else
@@ -288,7 +300,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             }
         }
 
-        var distributedType = inBuffer.DistributedType is DistributedType dt
+        var distributedType = ((TIR.Buffer)output).DistributedType is DistributedType dt
             ? dt with { TensorType = new TensorType(newType, newDimensions) }
             : null;
         output = inBuffer.With(name: ((TIR.Buffer)output).Name, elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
@@ -325,8 +337,6 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
     private Expr GenerateReshard(Expr input, ref Expr output, DistributedType inType, DistributedType outType)
     {
-        // FIXME: re-balance issue.
-#if false
         if (input is TIR.Buffer inBuffer)
         {
             if (TryGenerateGatherThreadsReshard(inBuffer, ref output, inType, outType, out var newCall))
@@ -338,19 +348,24 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return newCall;
             }
         }
-#endif
 
         return TIR.F.NTT.GatherReduceScatter(input, output, inType, outType);
     }
 
     private bool TryGenerateGatherThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
     {
+        if (inType.Partial is not null || inBuffer.Users.Any(u => u is Call { Target: TIR.PrimFunction }))
+        {
+            newCall = null;
+            return false;
+        }
+
         var threadAxis = inType.Placement.Rank - 1;
         PhysicalBuffer? oldPhysicalBuffer = null;
 
         // S -> B
         var reducedInPolices = inType.AxisPolicies.Select(sbp => sbp is SBPSplit split && split.Axes.Contains(threadAxis) ? (split.Axes.Count == 1 ? (SBP)SBP.B : SBP.S(split.Axes.Except([threadAxis]).ToArray())) : sbp);
-        if (reducedInPolices.ToArray().SequenceEqual(outType.AxisPolicies.ToArray()))
+        if (DistributedUtility.AreSamePolicies(reducedInPolices.ToArray(), outType.AxisPolicies.ToArray(), false))
         {
             oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
         }
@@ -422,7 +437,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
     private bool TryGenerateSplitThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
     {
         // Avoid P -> B -> S
-        if (inType.Partial)
+        if (inType.Partial is not null || inBuffer.Users.Any(u => u is Call { Target: TIR.PrimFunction }))
         {
             newCall = null;
             return false;
@@ -434,7 +449,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         int splitAxis = -1;
 
         // B -> S
-        if (reducedOutPolices.ToArray().SequenceEqual(inType.AxisPolicies.ToArray()))
+        if (DistributedUtility.AreSamePolicies(reducedOutPolices.ToArray(), inType.AxisPolicies.ToArray(), false))
         {
             oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
             splitAxis = outType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));

@@ -6,6 +6,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CustomNTT;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.CustomNTT;
@@ -43,7 +44,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     {
         if (input is DistributedType inType)
         {
-            if (Enumerable.Range(0, inType.TensorType.Shape.Rank).Any(i => inType.AxisPolicies[i] != target.InSBPs[i]))
+            if (Enumerable.Range(0, inType.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(inType.AxisPolicies[i], target.InSBPs[i], false)))
             {
                 return false;
             }

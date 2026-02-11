@@ -60,9 +60,16 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                     return invalidType;
                 }
 
+                var granularity = split.Granularity;
+                if (newDims[newSplitAxis] != inShape[inAxis])
+                {
+                    // If the new split axis is not the same as the old split axis, we need to adjust the granularity.
+                    granularity = granularity is null ? null : granularity / newAxes.Except([newAxesOffset + newSplitAxis]).Aggregate((Dimension)1, (a, b) => a * maxNewShape[b]);
+                }
+
                 foreach (var newAxis in newAxes)
                 {
-                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? split : SBP.B;
+                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? SBP.S(split.Axes, granularity) : SBP.B;
                 }
             }
             else
@@ -101,7 +108,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                     return invalidType;
                 }
 
-                newAxisPolicies[newAxis] = inType.AxisPolicies[firstSplitAxis.Value];
+                var split = (SBPSplit)inType.AxisPolicies[firstSplitAxis.Value];
+                newAxisPolicies[newAxis] = split.Granularity is null ? split :
+                    SBP.S(split.Axes, split.Granularity! * inAxes.Except([firstSplitAxis.Value]).Aggregate((Dimension)1, (a, b) => a * maxInShape[b]));
             }
             else
             {

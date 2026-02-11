@@ -22,7 +22,7 @@ public static class DistributedUtility
         }
     }
 
-    public delegate bool DivideByDelegate(long input, int divisor);
+    public delegate bool DivideByDelegate(long input, int divisor, bool isFixed);
 
     [Flags]
     public enum DivideFlags
@@ -73,9 +73,9 @@ public static class DistributedUtility
             {
                 var axis = splitsAxes[ti];
                 var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                if (axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && DivideByFunc(maxShape[di], divisor))
+                if (axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && DivideByFunc(maxShape[di], divisor, tensorType.Shape[di].IsFixed))
                 {
-                    policy.Add(SBP.S(axis.ToArray()));
+                    policy.Add(SBP.S(axis.ToArray(), (int)MathUtility.CeilDiv(maxShape[di], divisor)));
                 }
             }
 
@@ -142,7 +142,7 @@ public static class DistributedUtility
         // 2. All shapes are divisible by the mesh.
         var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         var divisors = GetDivisors(new DistributedType(tensorType, polices.ToArray(), placement));
-        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : DivideByFunc(maxShape[p.axis], p.d));
+        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : DivideByFunc(maxShape[p.axis], p.d, tensorType.Shape[p.axis].IsFixed));
     }
 
     public static bool IsDistributable(ReadOnlySpan<SBP> polices)
@@ -213,7 +213,7 @@ public static class DistributedUtility
 
     public static IRArray<SBP> AxisPolicesToNDSBP(IRArray<SBP> axisPolices, int rank)
     {
-        var ndsbp = new SBP[rank];
+        var ndsbp = Enumerable.Repeat(SBP.B, rank).Select(p => (SBP)p).ToArray();
         for (var i = 0; i < axisPolices.Count; i++)
         {
             var policy = axisPolices[i];
@@ -221,27 +221,36 @@ public static class DistributedUtility
             {
                 foreach (var ax in split.Axes)
                 {
-                    ndsbp[ax] = SBP.S([i]);
+                    ndsbp[ax] = SBP.S([i], split.Granularity);
+                }
+            }
+            else if (policy is SBPPartial partial)
+            {
+                foreach (var ax in partial.Axes)
+                {
+                    ndsbp[ax] = SBP.P(ndsbp[ax] is SBPPartial p ? p.Axes.Append(i).ToArray() : [i], partial.Op);
                 }
             }
         }
 
-        return ndsbp.Select(sbp => sbp is SBPSplit ? sbp : SBP.B).ToArray();
+        return ndsbp;
     }
 
     public static IRArray<SBP> NDSBPToAxisPolices(IRArray<SBP> ndsbp, int rank)
     {
-        var polices = new SBP[rank];
+        var polices = Enumerable.Repeat(SBP.B, rank).Select(p => (SBP)p).ToArray();
         for (int d = 0; d < polices.Length; d++)
         {
             var splitAxes = Enumerable.Range(0, ndsbp.Count).Where(i => ndsbp[i] is SBPSplit split && split.Axes[0] == d).ToArray();
+            var partialAxes = Enumerable.Range(0, ndsbp.Count).Where(i => ndsbp[i] is SBPSplit partial && partial.Axes.Contains(d)).ToArray();
             if (splitAxes.Any())
             {
-                polices[d] = SBP.S(splitAxes);
+                polices[d] = SBP.S(splitAxes, ((SBPSplit)ndsbp[splitAxes[0]]).Granularity);
             }
-            else
+
+            if (partialAxes.Any())
             {
-                polices[d] = SBP.B;
+                polices[d] = SBP.P(partialAxes, ((SBPPartial)ndsbp[partialAxes[0]]).Op);
             }
         }
 
@@ -293,9 +302,9 @@ public static class DistributedUtility
         return ret.ToList();
     }
 
-    public static bool IsDivideBy(long input, int divisor)
+    public static bool IsDivideBy(long input, int divisor, bool isFixed)
     {
-        if (input >= divisor)
+        if (!isFixed || input >= divisor)
         {
             return true;
         }
@@ -303,14 +312,61 @@ public static class DistributedUtility
         return false;
     }
 
-    public static bool IsDivideExactly(long input, int divisor)
+    public static bool IsDivideExactly(long input, int divisor, bool isFixed = true)
     {
-        if (input >= divisor && input % divisor == 0)
+        if (!isFixed || (input >= divisor && input % divisor == 0))
         {
             return true;
         }
 
         return false;
+    }
+
+    public static bool AreSamePolicies(IRArray<SBP>? a, IRArray<SBP>? b, bool checkGranularity = true)
+    {
+        if (a == null && b == null)
+        {
+            return true;
+        }
+
+        if (a == null || b == null || a.Value.Count != b.Value.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < a.Value.Count; i++)
+        {
+            if (!IsSamePolicy(a.Value[i], b.Value[i], checkGranularity))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static bool IsSamePolicy(SBP a, SBP b, bool checkGranularity = true)
+    {
+        if (a == null || b == null)
+        {
+            return false;
+        }
+
+        if (a is SBPSplit splitA && b is SBPSplit splitB)
+        {
+            if (checkGranularity)
+            {
+                return a == b;
+            }
+            else
+            {
+                return splitA.Axes == splitB.Axes;
+            }
+        }
+        else
+        {
+            return a == b;
+        }
     }
 
     public static float GetDividedTensorEfficiency(DistributedType distributedType, int burstLength)
@@ -358,7 +414,8 @@ public static class DistributedUtility
         var shape = new long[distributedType.TensorType.Shape.Rank];
         for (int axis = 0; axis < offset.Length; axis++)
         {
-            var splits = distributedType.AxisPolicies[axis] is SBPSplit s
+            var policy = distributedType.AxisPolicies[axis];
+            var splits = policy is SBPSplit s
             ? s.Axes.Select(td => (Placement: td, DeviceIndex: shardIndex[td], DeviceDim: distributedType.Placement.Hierarchy[td])).ToArray()
             : Array.Empty<(int Placement, int DeviceIndex, int DeviceDim)>();
             if (splits.Any())
@@ -368,7 +425,7 @@ public static class DistributedUtility
                 var subHierarchySize = (int)TensorUtilities.GetProduct(subHierarchies);
                 var subShardIndex = splits.Select(x => x.DeviceIndex).ToArray();
                 var linearIndex = TensorUtilities.GetLinearOffset(subHierarchyStrides, subShardIndex);
-                var localDim = MathUtility.CeilDiv(globalShape[axis], subHierarchySize);
+                var localDim = ((SBPSplit)policy).Granularity is not null ? (long)((SBPSplit)policy).Granularity!.Metadata.Range!.Value.Max : MathUtility.CeilDiv(globalShape[axis], subHierarchySize);
                 offset[axis] = linearIndex * localDim;
                 shape[axis] = Math.Min(localDim, globalShape[axis] - offset[axis]);
             }
@@ -390,14 +447,21 @@ public static class DistributedUtility
         {
             if (distributedType.AxisPolicies.Count > d && distributedType.AxisPolicies[d] is SBPSplit split)
             {
-                var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
-                if (divideFlags.HasFlag(DivideFlags.FloorDiv))
+                if (split.Granularity is not null)
                 {
-                    tiles[d] = tiles[d] / divisor;
+                    tiles[d] = split.Granularity;
                 }
                 else
                 {
-                    tiles[d] = Dimension.CeilDiv(tiles[d], divisor);
+                    var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
+                    if (divideFlags.HasFlag(DivideFlags.FloorDiv))
+                    {
+                        tiles[d] = tiles[d] / divisor;
+                    }
+                    else
+                    {
+                        tiles[d] = Dimension.CeilDiv(tiles[d], divisor);
+                    }
                 }
             }
         }

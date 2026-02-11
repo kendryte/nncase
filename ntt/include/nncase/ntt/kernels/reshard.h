@@ -120,7 +120,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
             [&](auto last_acc, auto global_dim, auto axis) {
                 auto [last_global_offset, last_local_offset, last_shape] =
                     last_acc;
-                const auto policy =
+                auto policy =
                     std::get<axis>(src.sharding().axis_policies);
                 if constexpr (distributed::SplitShardPolicy<
                                   std::decay_t<decltype(policy)>>) {
@@ -330,16 +330,16 @@ struct reshard_impl<SrcTensor, DestTensor> {
                   "Cannot reshard between different mesh types.");
 
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
-        if constexpr (std::is_same_v<typename SrcTensor::shape_type,
-                                     typename DestTensor::shape_type>) {
-            if (src.shape() == dest.shape()) {
-                // make sure src ready.
-                distributed::topology_synchronize();
-                overlap_aware_reshard(src, dest);
-                distributed::topology_synchronize();
-                return;
-            }
-        }
+        // if constexpr (std::is_same_v<typename SrcTensor::shape_type,
+        //                              typename DestTensor::shape_type>) {
+        //     if (src.shape() == dest.shape()) {
+        //         // make sure src ready.
+        //         distributed::topology_synchronize();
+        //         overlap_aware_reshard(src, dest);
+        //         distributed::topology_synchronize();
+        //         return;
+        //     }
+        // }
 
         copy_to_global(src);
         copy_from_global(dest);
@@ -388,7 +388,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         std::array<size_t, mesh_type::rank()> counts{};
 
         auto get_coord = [&]<size_t tensor_axis>() {
-            const auto policy = std::get<tensor_axis>(src.sharding().axis_policies);
+            auto policy = std::get<tensor_axis>(src.sharding().axis_policies);
             if constexpr (distributed::SplitShardPolicy<std::decay_t<decltype(policy)>>) {
                 size_t num_blocks = 1;
                 constexpr auto policy_rank = policy.axes.rank();

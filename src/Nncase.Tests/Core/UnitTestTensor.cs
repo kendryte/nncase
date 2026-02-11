@@ -456,7 +456,7 @@ public sealed class UnitTestTensor
                 },
                 new[] { 32 },
                 new[] { IR.NN.PagedKVCacheDimKind.NumBlocks },
-                new[] { SBP.S(0) });
+                new[] { SBP.S([0]) });
             var obj = new Evaluator.NN.RefPagedAttentionKVCache(cfg, 1, 4, Tensor.From([0L]), Tensor.From([4L]), Tensor.From([0L, 1L, 0L, 2L], [1, 2, 2]), Tensor.From([0L, 1L, 0L, 2L, 0L, 3L, 0L, 4L], [4, 2]), 4, Tensor.Zeros<Vector32<float>>([1, 1, 2, 3, 4, 5, 6]));
             var original = Tensor.From(new Reference<IR.NN.IPagedAttentionKVCache>[] { new(obj) }, []);
             using (var stream = File.Create(path))

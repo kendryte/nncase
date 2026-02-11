@@ -89,7 +89,14 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
                 return invalid;
             }
 
-            ndsbp[i] = input.AxisPolicies[i];
+            if (input.AxisPolicies[i] is SBPSplit split)
+            {
+                ndsbp[i] = SBP.S(split.Axes, split.Granularity is null ? null : split.Granularity * outTensorType.Shape[i] / input.TensorType.Shape[i]);
+            }
+            else
+            {
+                ndsbp[i] = input.AxisPolicies[i];
+            }
         }
 
         return new DistributedType(outTensorType, ndsbp, input.Placement);

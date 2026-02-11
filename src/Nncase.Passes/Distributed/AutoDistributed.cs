@@ -321,7 +321,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         bool Matched(SearchableNode node, (IRArray<SBP> Policies, Placement Placement) tp)
         {
-            return node.IRType is DistributedType dtype && dtype.AxisPolicies == tp.Policies && dtype.Placement == tp.Placement;
+            return node.IRType is DistributedType dtype && DistributedUtility.AreSamePolicies(dtype.AxisPolicies, tp.Policies, false) && dtype.Placement == tp.Placement;
         }
 
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
@@ -602,6 +602,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     }
                 }
 
+                if (expr.Target is not Boxing && ((Call)newExpr).Arguments.AsValueEnumerable().Any(a => a.CheckedType is DistributedType dt && dt.Partial is not null))
+                {
+                    continue;
+                }
+
                 if (!newExpr.InferenceType(_inferencer_cache) || newExpr.CheckedType is InvalidType)
                 {
                     continue;
@@ -693,7 +698,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 || expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal) || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)))
                 || expr.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal)
                 || expr.Target.GetType().FullName!.Contains("VectorizedRoPE", StringComparison.Ordinal)
-                || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention))
+                || expr.Target.GetType().FullName!.Contains("Matmul", StringComparison.InvariantCultureIgnoreCase)
+                || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)
+                || expr.Target is Gather)
             {
                 bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var linked = false;
@@ -1023,14 +1030,54 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
-            if (inv == outv)
+            if (inv.Partial == outv.Partial && DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies))
             {
                 return new InvalidType("Same DistributedType");
             }
 
-            if (inv.AxisPolicies.Any(s => s is SBPPartial) || outv.AxisPolicies.Any(s => s is SBPPartial))
+            if (inv.AxisPolicies.Any(sbp => sbp is SBPPartial) || outv.AxisPolicies.Any(sbp => sbp is SBPPartial))
             {
-                return new InvalidType("Not supported input/output is Partial");
+                return new InvalidType("Not Support Partial in Policeis.");
+            }
+
+            var partialDims = new List<int>();
+            if (inv.Partial is not null)
+            {
+                for (int i = 0; i < inv.AxisPolicies.Count; i++)
+                {
+                    if (inv.AxisPolicies[i] is SBPSplit && outv.AxisPolicies[i] is SBPBroadCast)
+                    {
+                        return new InvalidType("Not supported input is BroadCast output is Split");
+                    }
+
+                    if (outv.AxisPolicies[i] is SBPSplit s)
+                    {
+                        if (inv.AxisPolicies[i] is SBPSplit splitIn)
+                        {
+                            if (splitIn.Axes.Except(s.Axes).Any())
+                            {
+                                return new InvalidType("Not Supported Split-> Split.");
+                            }
+                        }
+
+                        if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
+                        {
+                            partialDims.Add(i);
+                        }
+                    }
+                }
+
+                var ndspsIn = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
+                var ndspsOut = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
+                if (Enumerable.Range(0, ndspsIn.Count).Any(i => ndspsIn[i] is SBPSplit si && (ndspsOut[i] is SBPBroadCast || (ndspsOut[i] is SBPSplit so && so.Axes[0] != si.Axes[0]))))
+                {
+                    return new InvalidType("Not Supported Split-> Broadcast.");
+                }
+            }
+
+            if (partialDims.Count > 0 && !Enumerable.Range(0, inv.AxisPolicies.Count).Except(partialDims.ToArray()).All(i => DistributedUtility.IsSamePolicy(inv.AxisPolicies[i], outv.AxisPolicies[i])))
+            {
+                return new InvalidType("Not Supported Partial.");
             }
 
             return outv;
@@ -1038,7 +1085,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         IRType VisitD2T(DistributedType inv, TensorType outv)
         {
-            if (inv.AxisPolicies.Any(s => s is SBPPartial))
+            if (inv.AxisPolicies.Any(s => s is SBPPartial) || inv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Partial output is Unshard");
             }
@@ -1048,7 +1095,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         IRType VisitT2D(TensorType inv, DistributedType outv)
         {
-            if (outv.AxisPolicies.Any(s => s is SBPPartial))
+            if (outv.AxisPolicies.Any(s => s is SBPPartial) || outv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Unshard output is Partial");
             }

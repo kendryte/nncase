@@ -27,23 +27,59 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
             if (inv.TensorType != outv.TensorType)
             {
-                if (!inv.AxisPolicies.Any(sbp => sbp is SBPPartial))
+                if (!inv.AxisPolicies.Any(sbp => sbp is SBPPartial) && inv.Partial is null)
                 {
                     return outv;
                 }
+                else
+                {
+                    return new InvalidType("Not Support Partial when shape changes.");
+                }
             }
 
-            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
-            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
-            for (int i = 0; i < ndsbpsA.Count; i++)
+            if (inv.AxisPolicies.Any(sbp => sbp is SBPPartial) || outv.AxisPolicies.Any(sbp => sbp is SBPPartial))
             {
-                switch (ndsbpsA[i], ndsbpsB[i])
+                return new InvalidType("Not Support Partial in Policeis.");
+            }
+
+            var partialDims = new List<int>();
+            if (inv.Partial is not null)
+            {
+                for (int i = 0; i < inv.AxisPolicies.Count; i++)
                 {
-                    case (SBPPartial, SBPSplit):
-                        return new InvalidType("partial to split");
-                    case (not SBPPartial, SBPPartial):
-                        return new InvalidType("split/broadcast to partial");
+                    if (inv.AxisPolicies[i] is SBPSplit && outv.AxisPolicies[i] is SBPBroadCast)
+                    {
+                        return new InvalidType("Not supported input is BroadCast output is Split");
+                    }
+
+                    if (outv.AxisPolicies[i] is SBPSplit s)
+                    {
+                        if (inv.AxisPolicies[i] is SBPSplit splitIn)
+                        {
+                            if (splitIn.Axes.Except(s.Axes).Any())
+                            {
+                                return new InvalidType("Not Supported Split-> Split.");
+                            }
+                        }
+
+                        if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
+                        {
+                            partialDims.Add(i);
+                        }
+                    }
                 }
+
+                var ndspsIn = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
+                var ndspsOut = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
+                if (Enumerable.Range(0, ndspsIn.Count).Any(i => ndspsIn[i] is SBPSplit si && (ndspsOut[i] is SBPBroadCast || (ndspsOut[i] is SBPSplit so && so.Axes[0] != si.Axes[0]))))
+                {
+                    return new InvalidType("Not Supported Split-> Broadcast.");
+                }
+            }
+
+            if (partialDims.Count > 0 && !Enumerable.Range(0, inv.AxisPolicies.Count).Except(partialDims.ToArray()).All(i => DistributedUtility.IsSamePolicy(inv.AxisPolicies[i], outv.AxisPolicies[i])))
+            {
+                return new InvalidType("Not Supported Partial.");
             }
 
             return outv;
@@ -51,8 +87,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitD2T(DistributedType inv, TensorType outv)
         {
-            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
-            if (ndsbpsA.Any(s => s is SBPPartial))
+            if (inv.AxisPolicies.Any(s => s is SBPPartial) || inv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Partial output is Unshard");
             }
@@ -62,8 +97,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitT2D(TensorType inv, DistributedType outv)
         {
-            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
-            if (ndsbpsB.Any(s => s is SBPPartial))
+            if (outv.AxisPolicies.Any(s => s is SBPPartial) || outv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Unshard output is Partial");
             }
@@ -307,6 +341,12 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                 break;
                             case (SBPBroadCast, SBPSplit splitOut):
                                 splitOut.Axes.ToArray().ForEach(s => scatterPart *= hierarchyPenalty[s]);
+                                break;
+                            case (SBPPartial, SBPSplit splitOut):
+                                // actually partial to split needs gather.
+                                break;
+                            case (SBPPartial sBPPartial, SBPBroadCast):
+                                sBPPartial.Axes.ToArray().ForEach(s => gatherPart *= hierarchyPenalty[s]);
                                 break;
                             default:
                                 throw new NotSupportedException($"{a} to {b}");

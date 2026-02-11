@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -49,16 +50,10 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         var indexType = context.GetArgumentType<IRType>(target, Gather.Index);
         var retType = context.GetReturnType<IRType>();
 
-        var gatherPart = 1U;
-        if (inputType is DistributedType d && d.AxisPolicies[target.Axis] is SBPSplit split)
-        {
-            gatherPart = split.Axes.Select(a => d.Placement.Hierarchy[a]).Aggregate(1U, (a, b) => (uint)(a * b));
-        }
-
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(indexType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType) * gatherPart,
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType),
         };
     }
 
@@ -112,12 +107,12 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return invalid;
         }
 
-        // not support partial
+        // not support partial in ndsbp
         if (ndsbp.Any(sbp => sbp is SBPPartial))
         {
             return invalid;
         }
 
-        return new DistributedType(tensorType, ndsbp, input.Placement);
+        return new DistributedType(tensorType, ndsbp, input.Placement, input.AxisPolicies[axis] is SBPSplit split ? SBP.P(split.Axes) : null);
     }
 }

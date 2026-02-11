@@ -150,7 +150,7 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
                         .squeeze(local_slots_squeeze);
 
                 // process kv_head different sharding on slot and kv cache.
-                const auto kv_head_policy = config_t::template axis_policy<
+                auto kv_head_policy = config_t::template axis_policy<
                     caching::paged_kvcache_dim_kind::num_kv_heads>();
                 const auto global_head_id =
                     slots_global_offset[head_index] + local_head_id;

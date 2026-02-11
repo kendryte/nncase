@@ -165,25 +165,25 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
     {
         if (q is DistributedType a && gate is DistributedType b && down is DistributedType c && up is DistributedType d)
         {
-            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != se.QSBPs[i]))
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(a.AxisPolicies[i], se.QSBPs[i], checkGranularity: false)))
             {
                 Console.WriteLine($"[SparseExperts] Q SBP not match: {string.Join(",", a.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.QSBPs.Select(p => p.ToString()))}");
                 return false;
             }
 
-            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolicies[i] != se.GateSBPs[i]))
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(b.AxisPolicies[i], se.GateSBPs[i], checkGranularity: false)))
             {
                 Console.WriteLine($"[SparseExperts] Gate SBP not match: {string.Join(",", b.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.GateSBPs.Select(p => p.ToString()))}");
                 return false;
             }
 
-            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => c.AxisPolicies[i] != se.DownSBPs[i]))
+            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(c.AxisPolicies[i], se.DownSBPs[i], checkGranularity: false)))
             {
                 Console.WriteLine($"[SparseExperts] Down SBP not match: {string.Join(",", c.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.DownSBPs.Select(p => p.ToString()))}");
                 return false;
             }
 
-            if (Enumerable.Range(0, d.TensorType.Shape.Rank).Any(i => d.AxisPolicies[i] != se.UpSBPs[i]))
+            if (Enumerable.Range(0, d.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(d.AxisPolicies[i], se.UpSBPs[i], checkGranularity: false)))
             {
                 Console.WriteLine($"[SparseExperts] Up SBP not match: {string.Join(",", d.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.UpSBPs.Select(p => p.ToString()))}");
                 return false;

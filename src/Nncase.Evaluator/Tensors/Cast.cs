@@ -73,7 +73,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     {
         var invalid = new InvalidType(inType.ToString());
         var outType = Visit(target, inType.TensorType);
-        var ndsbp = new SBP[inType.TensorType.Shape.Rank];
+        var ndsbp = inType.AxisPolicies.ToArray();
         var shape = CompilerServices.GetMaxShape(inType.TensorType.Shape);
         for (int i = 0; i < ndsbp.Length; i++)
         {
@@ -92,10 +92,13 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
                     {
                         return invalid;
                     }
+                    else
+                    {
+                        var scale = 1f * outShape[i] / shape[i];
+                        ndsbp[i] = SBP.S(split.Axes, split.Granularity is not null ? (scale >= 1 ? split.Granularity * (long)scale : split.Granularity / (long)(1f / scale)) : null);
+                    }
                 }
             }
-
-            ndsbp[i] = inType.AxisPolicies[i];
         }
 
         return new DistributedType((TensorType)outType, ndsbp, inType.Placement);

@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
@@ -47,7 +48,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         {
             return (input, scale, bias) switch
             {
-                (DistributedType a, DistributedType b, DistributedType c) => new DistributedType((TensorType)VisitTensorType(target, a.TensorType, b.TensorType, c.TensorType), target.OutSBPs, a.Placement),
+                (DistributedType a, DistributedType b, DistributedType c) => VisitDistributedType(target, a, b, c),
                 (TensorType a, TensorType b, TensorType c) => VisitTensorType(target, a, b, c),
                 _ => new InvalidType($"{input} {scale} {bias} not support"),
             };
@@ -68,17 +69,17 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     {
         if (input is DistributedType a && scale is DistributedType b && bias is DistributedType c)
         {
-            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != layerNorm.InSBPs[i]))
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(a.AxisPolicies[i], layerNorm.InSBPs[i], false)))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolicies[i] != layerNorm.ScaleSBPs[i]))
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(b.AxisPolicies[i], layerNorm.ScaleSBPs[i], false)))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => c.AxisPolicies[i] != layerNorm.BiasSBPs[i]))
+            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(c.AxisPolicies[i], layerNorm.BiasSBPs[i], false)))
             {
                 return false;
             }
@@ -113,5 +114,25 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         {
             return new TensorType(target.OutputDataType, input.Shape);
         }
+    }
+
+    private IRType VisitDistributedType(LayerNorm target, DistributedType input, DistributedType scale, DistributedType bias)
+    {
+        var tensorType = (TensorType)VisitTensorType(target, input.TensorType, scale.TensorType, bias.TensorType);
+
+        var ndsbps = new SBP[tensorType.Shape.Rank];
+        for (var i = 0; i < ndsbps.Length; i++)
+        {
+            if (i == target.VectorizedAxes[0] && input.AxisPolicies[i] is SBPSplit split)
+            {
+                ndsbps[i] = SBP.S(split.Axes, split.Granularity is null ? null : split.Granularity * ((VectorType)input.TensorType.DType).Lanes[0] / ((VectorType)tensorType.DType).Lanes[0]);
+            }
+            else
+            {
+                ndsbps[i] = input.AxisPolicies[i];
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbps, input.Placement);
     }
 }

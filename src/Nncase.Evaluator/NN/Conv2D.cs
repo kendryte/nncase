@@ -140,7 +140,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
                     {
                         if (ndsbpBias[i] is SBPBroadCast)
                         {
-                            ndsbp[i] = SBP.P();
+                            ndsbp[i] = SBP.P([1]);
                         }
                         else
                         {
