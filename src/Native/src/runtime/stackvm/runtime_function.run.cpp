@@ -33,15 +33,15 @@ using namespace nncase::runtime::stackvm;
 
 result<void>
 stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
+    try_var(profiling,
+            module().interp().options().get_scalar_opt<uint8_t>("profiling"));
     reader_ = {text};
 
     while (!reader_.empty()) {
         pc_ = reader_.tell();
         opcode_t opcode = reader_.read<opcode_t>();
         if (opcode != opcode_t::TENSOR) {
-#ifdef ENABLE_OP_PROFILE
-            op_profile p(to_string(opcode), (uint8_t)opcode);
-#endif
+            op_profile p(opcode, profiling);
             switch (opcode) {
 #include "ops/control.inl"
 #include "ops/conversion.inl"
@@ -54,9 +54,7 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
             }
         } else {
             auto tensor_func = reader_.read_unaligned<tensor_function_t>();
-#ifdef ENABLE_OP_PROFILE
-            op_profile p(to_string(tensor_func), (uint8_t)opcode);
-#endif
+            op_profile p(opcode, tensor_func, profiling);
             try_(visit(tensor_func, reader_))
         }
     }

@@ -169,6 +169,100 @@ struct binary_op_div_rvv {
     }
 };
 
+struct binary_op_mod_rvv {
+    // float(fmod)
+    vfloat32m8_t operator()(const vfloat32m8_t &a, const vfloat32m8_t &b,
+                            size_t vl) const {
+        auto quotient_f = vfdiv_vv_f32m8(a, b, vl);
+        auto quotient_x = vfcvt_rtz_x_f_v_i32m8(quotient_f, vl);
+        quotient_f = vfcvt_f_x_v_f32m8(quotient_x, vl);
+        return vfnmsub_vv_f32m8(quotient_f, b, a, vl);
+    }
+
+    vfloat32m8_t operator()(const vfloat32m8_t &a, const float &b,
+                            size_t vl) const {
+        auto quotient_f = vfdiv_vf_f32m8(a, b, vl);
+        auto quotient_x = vfcvt_rtz_x_f_v_i32m8(quotient_f, vl);
+        quotient_f = vfcvt_f_x_v_f32m8(quotient_x, vl);
+        return vfnmsub_vf_f32m8(quotient_f, b, a, vl);
+    }
+
+    vfloat32m8_t operator()(const float &a, const vfloat32m8_t &b,
+                            size_t vl) const {
+        vfloat32m8_t va;
+        va = vfmv_v_f_f32m8(a, vl);
+        auto quotient_f = vfrdiv_vf_f32m8(b, a, vl);
+        auto quotient_x = vfcvt_rtz_x_f_v_i32m8(quotient_f, vl);
+        quotient_f = vfcvt_f_x_v_f32m8(quotient_x, vl);
+        return vfnmsub_vv_f32m8(quotient_f, b, va, vl);
+    }
+
+    // int32_t(floor mod)
+    vint32m4_t operator()(const vint32m4_t &a, const vint32m4_t &b,
+                          size_t vl) const {
+        auto remainder = vrem_vv_i32m4(a, b, vl);
+        auto tmp = vxor_vv_i32m4(a, b, vl);
+        auto mask1 = vmsne_vx_i32m4_b8(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i32m4_b8(tmp, 0, vl);
+        mask1 = vmand_mm_b8(mask1, mask2, vl);
+        return vadd_vv_i32m4_m(mask1, remainder, remainder, b, vl);
+    }
+
+    vint32m4_t operator()(const vint32m4_t &a, const int32_t &b,
+                          size_t vl) const {
+        auto remainder = vrem_vx_i32m4(a, b, vl);
+        auto tmp = vxor_vx_i32m4(a, b, vl);
+        auto mask1 = vmsne_vx_i32m4_b8(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i32m4_b8(tmp, 0, vl);
+        mask1 = vmand_mm_b8(mask1, mask2, vl);
+        return vadd_vx_i32m4_m(mask1, remainder, remainder, b, vl);
+    }
+
+    vint32m4_t operator()(const int32_t &a, const vint32m4_t &b,
+                          size_t vl) const {
+
+        auto va = vmv_v_x_i32m4(a, vl);
+        auto remainder = vrem_vv_i32m4(va, b, vl);
+        auto tmp = vxor_vv_i32m4(va, b, vl);
+        auto mask1 = vmsne_vx_i32m4_b8(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i32m4_b8(tmp, 0, vl);
+        mask1 = vmand_mm_b8(mask1, mask2, vl);
+        return vadd_vv_i32m4_m(mask1, remainder, remainder, b, vl);
+    }
+
+    // int64_t(floor mod)
+    vint64m4_t operator()(const vint64m4_t &a, const vint64m4_t &b,
+                          size_t vl) const {
+        auto remainder = vrem_vv_i64m4(a, b, vl);
+        auto tmp = vxor_vv_i64m4(a, b, vl);
+        auto mask1 = vmsne_vx_i64m4_b16(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i64m4_b16(tmp, 0, vl);
+        mask1 = vmand_mm_b16(mask1, mask2, vl);
+        return vadd_vv_i64m4_m(mask1, remainder, remainder, b, vl);
+    }
+
+    vint64m4_t operator()(const vint64m4_t &a, const int64_t &b,
+                          size_t vl) const {
+        auto remainder = vrem_vx_i64m4(a, b, vl);
+        auto tmp = vxor_vx_i64m4(a, b, vl);
+        auto mask1 = vmsne_vx_i64m4_b16(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i64m4_b16(tmp, 0, vl);
+        mask1 = vmand_mm_b16(mask1, mask2, vl);
+        return vadd_vx_i64m4_m(mask1, remainder, remainder, b, vl);
+    }
+
+    vint64m4_t operator()(const int64_t &a, const vint64m4_t &b,
+                          size_t vl) const {
+        auto va = vmv_v_x_i64m4(a, vl);
+        auto remainder = vrem_vv_i64m4(va, b, vl);
+        auto tmp = vxor_vv_i64m4(va, b, vl);
+        auto mask1 = vmsne_vx_i64m4_b16(remainder, 0, vl);
+        auto mask2 = vmslt_vx_i64m4_b16(tmp, 0, vl);
+        mask1 = vmand_mm_b16(mask1, mask2, vl);
+        return vadd_vv_i64m4_m(mask1, remainder, remainder, b, vl);
+    }
+};
+
 // float32
 template <typename Top>
 void binary_impl_vv_f32(const float *input_a, const float *input_b, float *out,
@@ -241,6 +335,26 @@ void binary_impl_vv_i32(const int32_t *input_a, const int32_t *input_b,
     }
 }
 
+template <>
+void binary_impl_vv_i32<binary_op_mod_rvv>(const int32_t *input_a,
+                                           const int32_t *input_b, int32_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e32m4(n);
+        auto v_a = vle32_v_i32m4(input_a, vl);
+        auto v_b = vle32_v_i32m4(input_b, vl);
+        auto v_out = op(v_a, v_b, vl);
+        vse32_v_i32m4(out, v_out, vl);
+
+        input_a += vl;
+        input_b += vl;
+        out += vl;
+        n -= vl;
+    }
+}
+
 template <typename Top>
 void binary_impl_vf_i32(const int32_t *input_a, int32_t input_b, int32_t *out,
                         int n) {
@@ -251,6 +365,22 @@ void binary_impl_vf_i32(const int32_t *input_a, int32_t input_b, int32_t *out,
         auto v_a = vle32_v_i32m8(input_a, vl);
         auto v_out = op(v_a, input_b, vl);
         vse32_v_i32m8(out, v_out, vl);
+        input_a += vl;
+        out += vl;
+        n -= vl;
+    }
+}
+template <>
+void binary_impl_vf_i32<binary_op_mod_rvv>(const int32_t *input_a,
+                                           int32_t input_b, int32_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e32m4(n);
+        auto v_a = vle32_v_i32m4(input_a, vl);
+        auto v_out = op(v_a, input_b, vl);
+        vse32_v_i32m4(out, v_out, vl);
         input_a += vl;
         out += vl;
         n -= vl;
@@ -267,6 +397,22 @@ void binary_impl_fv_i32(int32_t input_a, const int32_t *input_b, int32_t *out,
         auto v_b = vle32_v_i32m8(input_b, vl);
         auto v_out = op(input_a, v_b, vl);
         vse32_v_i32m8(out, v_out, vl);
+        input_b += vl;
+        out += vl;
+        n -= vl;
+    }
+}
+template <>
+void binary_impl_fv_i32<binary_op_mod_rvv>(int32_t input_a,
+                                           const int32_t *input_b, int32_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e32m4(n);
+        auto v_b = vle32_v_i32m4(input_b, vl);
+        auto v_out = op(input_a, v_b, vl);
+        vse32_v_i32m4(out, v_out, vl);
         input_b += vl;
         out += vl;
         n -= vl;
@@ -291,6 +437,24 @@ void binary_impl_vv_i64(const int64_t *input_a, const int64_t *input_b,
         n -= vl;
     }
 }
+template <>
+void binary_impl_vv_i64<binary_op_mod_rvv>(const int64_t *input_a,
+                                           const int64_t *input_b, int64_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e64m4(n);
+        auto v_a = vle64_v_i64m4(input_a, vl);
+        auto v_b = vle64_v_i64m4(input_b, vl);
+        auto v_out = op(v_a, v_b, vl);
+        vse64_v_i64m4(out, v_out, vl);
+        input_a += vl;
+        input_b += vl;
+        out += vl;
+        n -= vl;
+    }
+}
 
 template <typename Top>
 void binary_impl_vf_i64(const int64_t *input_a, int64_t input_b, int64_t *out,
@@ -307,6 +471,22 @@ void binary_impl_vf_i64(const int64_t *input_a, int64_t input_b, int64_t *out,
         n -= vl;
     }
 }
+template <>
+void binary_impl_vf_i64<binary_op_mod_rvv>(const int64_t *input_a,
+                                           int64_t input_b, int64_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e64m4(n);
+        auto v_a = vle64_v_i64m4(input_a, vl);
+        auto v_out = op(v_a, input_b, vl);
+        vse64_v_i64m4(out, v_out, vl);
+        input_a += vl;
+        out += vl;
+        n -= vl;
+    }
+}
 
 template <typename Top>
 void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
@@ -318,6 +498,22 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
         auto v_b = vle64_v_i64m8(input_b, vl);
         auto v_out = op(input_a, v_b, vl);
         vse64_v_i64m8(out, v_out, vl);
+        input_b += vl;
+        out += vl;
+        n -= vl;
+    }
+}
+template <>
+void binary_impl_fv_i64<binary_op_mod_rvv>(int64_t input_a,
+                                           const int64_t *input_b, int64_t *out,
+                                           int n) {
+    binary_op_mod_rvv op;
+    size_t vl;
+    while (n > 0) {
+        vl = vsetvl_e64m4(n);
+        auto v_b = vle64_v_i64m4(input_b, vl);
+        auto v_out = op(input_a, v_b, vl);
+        vse64_v_i64m4(out, v_out, vl);
         input_b += vl;
         out += vl;
         n -= vl;
@@ -539,6 +735,11 @@ result<void> optimized::binary(
         }                                                                      \
         case binary_op_t::div: {                                               \
             ret_value = optimized_binary_impl<binary_op_div_rvv>(              \
+                input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
+            break;                                                             \
+        }                                                                      \
+        case binary_op_t::mod: {                                               \
+            ret_value = optimized_binary_impl<binary_op_mod_rvv>(              \
                 input_a, input_b, output, in_a_shape, in_b_shape, out_shape);  \
             break;                                                             \
         }                                                                      \

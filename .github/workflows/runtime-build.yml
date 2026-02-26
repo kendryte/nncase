@@ -1,6 +1,11 @@
 name: runtime-build
 
-on: [ push, pull_request ]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
 
 concurrency:
   group: runtime-build-${{ github.ref }}
@@ -41,6 +46,7 @@ jobs:
       - name: Install Conan
         run: |
           pip install conan==2.6.0
+          pip install cmake==3.30.3
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
       - name: Configure
@@ -114,6 +120,7 @@ jobs:
       - name: Install Conan
         run: |
           pip install conan==2.6.0
+          pip install cmake==3.30.3
           conan remote add sunnycase https://conan.sunnycase.moe --index 0
 
       - name: Configure

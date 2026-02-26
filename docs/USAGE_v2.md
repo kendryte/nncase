@@ -16,7 +16,6 @@ nncase工具链compiler部分包括nncase和KPU插件包
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
@@ -222,7 +221,7 @@ PTQTensorOptions类, 用于配置nncase PTQ选项，各属性说明如下
 
 | 字段名称                              | 类型   | 是否必须 | 描述                                                                                      |
 | ------------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------- |
-| calibrate_method                      | string | 否       | 量化校正方法，默认为'NoClip'，可选'Kld'。使用量化时必须配置                               |
+| calibrate_method                      | string | 否       | 量化校正方法，默认为'Kld'，可选'NoClip'。                                                 |
 | samples_count                         | int    | 否       | 校正集数量。使用量化时必须配置                                                            |
 | finetune_weights_method               | string | 否       | 微调权重方法，默认为'NoFineTuneWeights'。可选 'UseSquant'                                 |
 | quant_type                            | string | 否       | 数据量化类型，默认为'uint8'。可选'int8','int16'                                           |
@@ -762,6 +761,34 @@ N/A
 
 ```python
 sim.set_output_tensor(0, tensor)
+```
+
+#### set_profiling()
+
+##### 功能描述
+
+设置profiling开关
+
+##### 接口定义
+
+```python
+set_profiling(enabled)
+```
+
+##### 输入参数
+
+| 参数名称 | 类型 | 是否必须 | 描述                  |
+| -------- | ---- | -------- | --------------------- |
+| enabled  | int  | 是       | 是否打开profiling开关 |
+
+##### 返回值
+
+N/A
+
+##### 代码示例
+
+```python
+sim.set_profiling(1)
 ```
 
 #### run()

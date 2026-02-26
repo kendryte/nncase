@@ -29,7 +29,6 @@ class nncaseConan(ConanFile):
         "python": [True, False],
         # "vulkan_runtime": [True, False],
         "python_root": ["ANY"],
-        "op_profile": [True, False],
         "dump_mem": [True, False],
 
     }
@@ -41,7 +40,6 @@ class nncaseConan(ConanFile):
         "python": True,
         # "vulkan_runtime": False,
         "python_root": "",
-        "op_profile": False,
         "dump_mem": False
     }
 
@@ -95,7 +93,6 @@ class nncaseConan(ConanFile):
         tc.variables['BUILDING_RUNTIME'] = self.options.runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
-        tc.variables['ENABLE_OP_PROFILE'] = self.options.op_profile
         tc.variables['ENABLE_DUMP_MEM'] = self.options.dump_mem
         if self.options.get_safe("python_root", default="") != "":
             tc.variables['Python3_ROOT_DIR'] = str(self.options.python_root).replace('\\', '/')

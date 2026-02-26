@@ -174,11 +174,13 @@ result<void> runtime_function::initialize(
 result<value_t> runtime_function::invoke(gsl::span<value_t> parameters,
                                          value_t return_value) noexcept {
     checked_try_var(retval, invoke_core(parameters, return_value));
-#ifdef ENABLE_OP_PROFILE
-    try_var(entry_func, module().interp().entry_function());
-    if (entry_func == this) {
-        op_profile::print();
+    try_var(enable_profiling,
+            module().interp().options().get_scalar_opt<uint8_t>("profiling"));
+    if (enable_profiling) {
+        try_var(entry_func, module().interp().entry_function());
+        if (entry_func == this) {
+            op_profile::print();
+        }
     }
-#endif
     return ok(retval);
 }

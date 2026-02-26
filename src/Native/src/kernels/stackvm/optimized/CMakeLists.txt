@@ -52,6 +52,9 @@ _TARGET_ARCH_FILES(TARGET kernels
                    where.cpp
                    log_softmax.cpp
                    reduce.cpp
+                   gather_elements.cpp
+                   tile.cpp
+                   topk.cpp
 )
 
 if(NOT MSVC)

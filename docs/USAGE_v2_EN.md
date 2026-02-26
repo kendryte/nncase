@@ -16,7 +16,6 @@ The nncase toolchain compiler section includes the nncase and KPU plugin wheel p
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
@@ -220,7 +219,7 @@ PTQTensorOptions is used to configure PTQ options. The details of all attributes
 
 | Attribute                             | Data Type | Required | Description                                                                                                         |
 | ------------------------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| calibrate_method                      | string    | N        | Specify calibrate method, 'NoClip' by default. 'Kld' is optional. Must be configured when use quantification.       |
+| calibrate_method                      | string    | N        | Specify calibrate method, 'Kld' by default. 'NoClip' is optional.                                                   |
 | samples_count                         | int       | N        | The number of calibration data sets. Must be configured when use quantification.                                    |
 | finetune_weights_method               | string    | N        | Finetune weights method,'NoFineTuneWeights' by default. 'UseSquant' is optional.                                    |
 | quant_type                            | string    | N        | Type of data quantification,'uint8' by default. 'int8','int16' are optional.                                        |
@@ -750,6 +749,34 @@ N/A
 
 ```python
 sim.set_output_tensor(0, tensor)
+```
+
+#### set_profiling()
+
+##### Description
+
+Set profiling
+
+##### Definition
+
+```python
+set_profiling(enabled)
+```
+
+##### Parameters
+
+| Attribute | Data Type | Required | Description                |
+| --------- | --------- | -------- | -------------------------- |
+| enabled   | int       | Y        | whther to enable profiling |
+
+##### Returns
+
+N/A
+
+##### Example
+
+```python
+sim.set_profiling(1)
 ```
 
 #### run()

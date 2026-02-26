@@ -26,7 +26,9 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-interpreter::interpreter() noexcept : entry_function_(nullptr) {}
+interpreter::interpreter() noexcept : entry_function_(nullptr) {
+    options().set("profiling", (uint8_t)0);
+}
 
 result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
                                      bool copy_buffer) noexcept {
@@ -203,6 +205,10 @@ result<void> interpreter::output_tensor(size_t index,
     }
     output_tensors_[index] = tensor;
     return ok();
+}
+
+void interpreter::set_profiling(uint8_t enabled) noexcept {
+    options().set("profiling", enabled);
 }
 
 result<void> interpreter::run() noexcept {

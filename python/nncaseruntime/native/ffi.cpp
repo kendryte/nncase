@@ -104,6 +104,10 @@ PYBIND11_MODULE(_nncaseruntime, m) {
              [](interpreter &interp, size_t index, runtime_tensor tensor) {
                  return interp.output_tensor(index, tensor).unwrap_or_throw();
              })
+        .def("set_profiling",
+             [](interpreter &interp, uint8_t enabled) {
+                 interp.set_profiling(enabled);
+             })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 }

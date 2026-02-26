@@ -49,10 +49,12 @@ before-build = [
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
-before-build = [
-  "rm -f {project}/CMakeUserPresets.json",
+before-build = """
+  rm -f {project}/CMakeUserPresets.json && \
+  yum install -y prelink && \
+  find . -name "libortki.so" -exec execstack -c {} \\;
   #"pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
-]
+"""
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 #[tool.cibuildwheel.linux.environment]
