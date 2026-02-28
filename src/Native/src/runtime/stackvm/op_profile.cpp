@@ -14,17 +14,17 @@
  */
 
 #include <algorithm>
+#include <iostream>
 #include <map>
 #include <nncase/runtime/stackvm/op_profile.h>
 #include <unordered_map>
 #include <vector>
 
-std::vector<std::tuple<std::string, uint8_t, double, double>>
-    op_profile::op_timing_;
+std::vector<OpInfo> op_profile::op_timing_;
 
 void op_profile::print() {
-    std::map<std::string, double> op_timing;
-    std::unordered_map<std::string, size_t> op_count;
+    std::map<const char *, double> op_timing;
+    std::unordered_map<const char *, size_t> op_count;
 
     std::cout << "stack OPs timeline" << std::endl;
     std::cout << "|" << std::setw(24) << std::left << "stackvm tensor op"
@@ -39,7 +39,11 @@ void op_profile::print() {
               << "|" << std::setw(24) << std::left << "---"
               << "|" << std::endl;
     double init_timing = -1;
-    for (auto &&[op_name, op_type, begin, end] : op_timing_) {
+    for (auto op_info : op_timing_) {
+        uint8_t op_type = op_info.type;
+        const char *op_name = op_info.name;
+        double begin = op_info.begin;
+        double end = op_info.end;
         if (init_timing == -1) {
             init_timing = begin;
         }
@@ -61,17 +65,19 @@ void op_profile::print() {
     }
 
     double total = 0.f;
-    std::vector<std::pair<std::string, double>> v;
+    std::vector<std::pair<const char *, double>> v;
+    v.reserve(op_timing.size());
     for (auto e : op_timing) {
         total += e.second;
         v.push_back(e);
     }
     std::cout << std::endl;
 
-    std::sort(
-        v.begin(), v.end(),
-        [=](std::pair<std::string, double> &a,
-            std::pair<std::string, double> &b) { return a.second > b.second; });
+    std::sort(v.begin(), v.end(),
+              [=](std::pair<const char *, double> &a,
+                  std::pair<const char *, double> &b) {
+                  return a.second > b.second;
+              });
 
     std::cout << "stackvm OPs profile" << std::endl;
     std::cout << "|" << std::setw(24) << std::left << "stackvm tensor op"

@@ -14,23 +14,38 @@
  */
 #pragma once
 #include "opcode.h"
-#include <chrono>
 #include <iomanip>
-#include <iostream>
-#include <tuple>
 #include <vector>
+
+#if defined(LINUX_RUNTIME)
+#include <chrono>
+#endif
 
 using namespace nncase::runtime::stackvm;
 
+#if defined(NNCASE_BAREMETAL)
 extern "C" {
 double get_ms_time();
 }
+#endif
+
+struct OpInfo {
+    uint8_t type;
+    const char *name;
+    double begin;
+    double end;
+    OpInfo(uint8_t t, const char *n, double s, double e)
+        : type(t), name(n), begin(s), end(e) {}
+};
 
 class op_profile {
   public:
     op_profile(opcode_t opcode, uint8_t enable_profiling = 1)
         : active_(enable_profiling) {
         if (active_) {
+            if (op_timing_.empty()) {
+                op_timing_.reserve(256);
+            }
             op_type_ = (uint8_t)opcode;
             op_name_ = to_string(opcode);
             begin_ = get_time();
@@ -41,6 +56,9 @@ class op_profile {
                uint8_t enable_profiling = 1)
         : active_(enable_profiling) {
         if (active_) {
+            if (op_timing_.empty()) {
+                op_timing_.reserve(256);
+            }
             op_type_ = (uint8_t)opcode;
             op_name_ = to_string(tensor_funct);
             begin_ = get_time();
@@ -50,16 +68,14 @@ class op_profile {
     ~op_profile() {
         if (active_) {
             end_ = get_time();
-            op_timing_.push_back(
-                std::make_tuple(op_name_, op_type_, begin_, end_));
+            op_timing_.emplace_back(op_type_, op_name_, begin_, end_);
         }
     }
 
     static void print();
 
   public:
-    static std::vector<std::tuple<std::string, uint8_t, double, double>>
-        op_timing_;
+    static std::vector<OpInfo> op_timing_;
 
   private:
     double get_time() {
@@ -78,7 +94,7 @@ class op_profile {
   private:
     double begin_;
     double end_;
-    std::string op_name_;
+    const char *op_name_;
     uint8_t op_type_;
     uint8_t active_;
 };

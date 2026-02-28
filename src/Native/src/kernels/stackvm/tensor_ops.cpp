@@ -324,7 +324,7 @@ nncase::kernels::stackvm::gather_elements(value_t input, value_t axis,
     try_positive_axis(axis_value, axis, input_tensor);
     auto out_shape = indices_tensor->shape();
     try_output(out_mem, output, dtype, out_shape);
-    try_(reference::gather_elements(
+    try_(optimized::gather_elements(
         dtype, input_mem, out_mem, input_tensor->shape(), out_shape,
         input_tensor->strides(), output_tensor->strides(),
         indices_tensor->dtype(), indices_mem, indices_tensor->shape(),
@@ -1095,31 +1095,54 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
     try_input(in_mem, input);
     try_positive_axis(axis_value, axis, input_tensor);
     try_dims(sections_value, sections);
-    auto shapes =
-        split_shape_infer(input_tensor->shape(), axis_value, sections_value);
-    try_tuple_output(outputs, output, input_tensor->dtype(), shapes);
-    try_var(out_strides, get_strides(output_tuple));
-    if (is_contiguous(input_tensor)) {
-        auto n = input_tensor->shape().size();
-        auto begins = axes_t(n, 0);
-        auto ends =
-            axes_t(input_tensor->shape().begin(), input_tensor->shape().end());
-        auto strides = axes_t(n, 1);
-        auto section_index = 0;
-        for (int i = 0; i < outputs.size(); ++i) {
-            auto out = outputs[i];
-            begins[axis_value] = section_index;
-            ends[axis_value] = section_index + sections_value[i];
-            section_index += sections_value[i];
-            try_(optimized::slice(input_tensor->dtype(), in_mem, out,
-                                  input_tensor->shape(),
-                                  input_tensor->strides(), out_strides[i],
-                                  begins, ends, strides, context));
+    auto in_shape = input_tensor->shape();
+    auto in_strides = input_tensor->strides();
+    auto shapes = split_shape_infer(in_shape, axis_value, sections_value);
+    auto in_place = std::all_of(in_shape.subspan(0, axis_value).begin(),
+                                in_shape.subspan(0, axis_value).end(),
+                                [](auto x) { return x == 1; });
+    if (is_contiguous(input_tensor) && in_place) {
+        auto size = shapes.size();
+        std::vector<value_t> fields(size);
+        auto start = 0;
+        for (size_t i = 0; i < size; ++i) {
+            auto new_shape = shapes[i];
+            auto index = dims_t(new_shape.size(), 0);
+            index[axis_value] = start;
+            fields[i] = tensor(
+                std::in_place, input_tensor->dtype(), new_shape,
+                get_default_strides(new_shape),
+                buffer_slice(input_tensor->buffer().buffer(),
+                             offset(in_strides, index) *
+                                 get_bytes(input_tensor->dtype()),
+                             get_bytes(input_tensor->dtype(), new_shape)));
+            start += sections_value[i];
         }
+
+        output = tuple(std::in_place, std::move(fields));
     } else {
-        try_ref(split, input_tensor->dtype(), in_mem, outputs,
-                input_tensor->shape(), input_tensor->strides(), out_strides,
-                axis_value, sections_value, context);
+        try_tuple_output(outputs, output, input_tensor->dtype(), shapes);
+        try_var(out_strides, get_strides(output_tuple));
+        if (is_contiguous(input_tensor)) {
+            auto n = in_shape.size();
+            auto begins = axes_t(n, 0);
+            auto ends = axes_t(in_shape.begin(), in_shape.end());
+            auto strides = axes_t(n, 1);
+            auto section_index = 0;
+            for (int i = 0; i < outputs.size(); ++i) {
+                auto out = outputs[i];
+                begins[axis_value] = section_index;
+                ends[axis_value] = section_index + sections_value[i];
+                section_index += sections_value[i];
+                try_(optimized::slice(input_tensor->dtype(), in_mem, out,
+                                      in_shape, in_strides, out_strides[i],
+                                      begins, ends, strides, context));
+            }
+        } else {
+            try_ref(split, input_tensor->dtype(), in_mem, outputs, in_shape,
+                    in_strides, out_strides, axis_value, sections_value,
+                    context);
+        }
     }
     KERNEL_FINISH;
 }
@@ -1166,7 +1189,7 @@ nncase::kernels::stackvm::tile(value_t input, value_t repeats, value_t output,
     auto ty = input_tensor->dtype();
     auto out_shape = tile_infer_shape(input_tensor->shape(), repeats_value);
     try_output(out_mem, output, ty, out_shape);
-    try_(reference::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
+    try_(optimized::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
                          input_tensor->strides(), output_tensor->strides(),
                          repeats_value));
     KERNEL_FINISH;
@@ -1191,7 +1214,7 @@ nncase::kernels::stackvm::top_k(value_t x, value_t k, value_t axis,
     try_var(tycode, to_typecode(x_tensor->dtype()));
     try_integer_v(largest);
     try_integer_v(sorted);
-    try_(reference::topk(
+    try_(optimized::topk(
         tycode, x_mem, outputs[0], OUT_CAST(int64_t, outputs[1]),
         x_tensor->shape(), x_tensor->strides(), out_values->shape(),
         out_values->strides(), out_indices->shape(), out_indices->strides(),

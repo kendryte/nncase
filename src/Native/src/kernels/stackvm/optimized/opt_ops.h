@@ -78,6 +78,14 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        gsl::span<const size_t> indices_shape, size_t axis,
        kernel_context &context) noexcept;
 
+NNCASE_API result<void> gather_elements(
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    datatype_t indices_type, const gsl::byte *indices,
+    gsl::span<const size_t> indices_shape, size_t axis,
+    kernel_context &context = default_kernel_context()) noexcept;
+
 NNCASE_API result<void> layer_norm(typecode_t typecode, const gsl::byte *input,
                                    gsl::byte *output, const gsl::byte *scale,
                                    const gsl::byte *bias,
@@ -176,6 +184,23 @@ where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
       gsl::span<const size_t> out_shape, gsl::span<const size_t> cond_strides,
       gsl::span<const size_t> x_strides, gsl::span<const size_t> y_strides,
       gsl::span<const size_t> out_strides);
+
+NNCASE_API result<void>
+tile(datatype_t dt, const gsl::byte *input, gsl::byte *output,
+     gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+     gsl::span<const size_t> repeats);
+
+NNCASE_API result<void> topk(typecode_t typecode, const gsl::byte *input,
+                             gsl::byte *output_values, int64_t *output_indices,
+                             gsl::span<const size_t> in_shape,
+                             gsl::span<const size_t> in_strides,
+                             gsl::span<const size_t> output_values_shape,
+                             gsl::span<const size_t> output_values_strides,
+                             gsl::span<const size_t> output_indices_shape,
+                             gsl::span<const size_t> output_indices_strides,
+                             const int64_t k, const int32_t axis,
+                             const bool largest, const bool sorted) noexcept;
 
 NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *src,
                                   gsl::byte *dest, const dims_t &in_shape,
