@@ -359,7 +359,8 @@ class CastTestGenerator(BaseTestGenerator):
         code.append(self.generate_header())
         
         # Generate test cases for all target types (except the same type)
-        for to_type in ALL_DATATYPES:
+        filtered_datatypes = [dt for dt in ALL_DATATYPES if dt.cpp_type != 'float_e2m1_t']
+        for to_type in filtered_datatypes:
             if from_type.cpp_type == to_type.cpp_type:
                 continue  # Skip same type cast
             
@@ -421,7 +422,8 @@ if __name__ == "__main__":
     
     generated_filenames = []  # collect all generated file names
 
-    for from_type in ALL_DATATYPES:
+    filtered_datatypes = [dt for dt in ALL_DATATYPES if dt.cpp_type != 'float_e2m1_t']
+    for from_type in filtered_datatypes:
         test_code = generator.generate_all_tests_for_from_type(from_type)
         filename = f"test_ntt_cast_from_{from_type.name_suffix.lower()}_generated.cpp"
         output_filepath = os.path.join(generated_directory, filename)

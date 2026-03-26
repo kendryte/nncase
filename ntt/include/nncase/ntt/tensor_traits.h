@@ -15,6 +15,7 @@
 #pragma once
 #include "../bfloat16.h"
 #include "../float8.h"
+#include "../float_subbyte.h"
 #include "../half.h"
 #include <type_traits>
 
@@ -88,6 +89,7 @@ template <typename T>
 concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T> ||
                  std::is_same_v<std::remove_cv_t<T>, bfloat16> ||
                  std::is_same_v<std::remove_cv_t<T>, half> ||
+                 std::is_same_v<std::remove_cv_t<T>, float_e2m1_t> ||
                  std::is_same_v<std::remove_cv_t<T>, float_e4m3_t> ||
                  std::is_same_v<std::remove_cv_t<T>, float_e5m2_t>;
 
@@ -117,6 +119,18 @@ template <Vector T> struct element_or_scalar_type<T> {
 
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
+
+template <typename T> struct element_size_in_byte {
+    static constexpr float value = sizeof(T);
+};
+
+template <> struct element_size_in_byte<float_e2m1_t> {
+    static constexpr float value = 0.5;
+};
+
+template <typename T>
+inline constexpr auto element_size_in_byte_v =
+    element_size_in_byte<std::remove_cv_t<T>>::value;
 
 template <class T>
 struct element_scalar_count : std::integral_constant<size_t, 1> {};

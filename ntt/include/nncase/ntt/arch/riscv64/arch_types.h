@@ -15,6 +15,7 @@
 #pragma once
 #include "../../../bfloat16.h"
 #include "../../../float8.h"
+#include "../../../float_subbyte.h"
 #include "../../../half.h"
 #include "../../native_vector.h"
 #ifdef __riscv_vector
@@ -382,4 +383,93 @@ NTT_DEFINE_NATIVE_MASK_VECTOR(64)
 #endif
 
 #undef NTT_DEFINE_NATIVE_MASK_VECTOR
+
+/* ------ LMUL >= 1: generates fixed_vuint8m<LMUL>_t ------ */
+#define DEFINE_FLOAT_E2M1_VECTOR_M(LMUL)                                       \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(float_e2m1_t, fixed_vuint8m##LMUL##_t,      \
+                                   NTT_VLEN / 4 * LMUL)                        \
+    template <Dimensions TIndex>                                               \
+    static float_e2m1_t get_element(const fixed_vuint8m##LMUL##_t &array,      \
+                                    const TIndex &index) noexcept {            \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        using Storage = typename float_e2m1_t::Storage;                        \
+        const auto offset = (size_t)index[dim_zero];                           \
+        Storage byte = array[offset >> 1];                                     \
+        bool is_low = (offset % 2 == 0);                                       \
+        Storage value4;                                                        \
+        if (is_low) {                                                          \
+            value4 = byte & 0x0F;                                              \
+        } else {                                                               \
+            value4 = (byte >> 4) & 0x0F;                                       \
+        }                                                                      \
+        return float_e2m1_t::bitcast(value4);                                  \
+    }                                                                          \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static void set_element(fixed_vuint8m##LMUL##_t &array,                    \
+                            const TIndex &index,                               \
+                            float_e2m1_t value) noexcept {                     \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        using Storage = typename float_e2m1_t::Storage;                        \
+        const auto offset = (size_t)index[dim_zero];                           \
+        Storage &byte = array[offset >> 1];                                    \
+        Storage v = value.raw() & 0x0F;                                        \
+        bool is_low = (offset % 2 == 0);                                       \
+        if (is_low) {                                                          \
+            byte = (byte & 0xF0) | v;                                          \
+        } else {                                                               \
+            byte = (byte & 0x0F) | (v << 4);                                   \
+        }                                                                      \
+    }                                                                          \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+/* ------ LMUL < 1: generates fixed_vuint8mf<LMUL>_t ------ */
+#define DEFINE_FLOAT_E2M1_VECTOR_MF(LMUL)                                      \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(float_e2m1_t, fixed_vuint8mf##LMUL##_t,     \
+                                   NTT_VLEN / 4 / LMUL)                        \
+    template <Dimensions TIndex>                                               \
+    static float_e2m1_t get_element(const fixed_vuint8mf##LMUL##_t &array,     \
+                                    const TIndex &index) noexcept {            \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        using Storage = typename float_e2m1_t::Storage;                        \
+        const auto offset = (size_t)index[dim_zero];                           \
+        Storage byte = array[offset >> 1];                                     \
+        bool is_low = (offset % 2 == 0);                                       \
+        Storage value4;                                                        \
+        if (is_low) {                                                          \
+            value4 = byte & 0x0F;                                              \
+        } else {                                                               \
+            value4 = (byte >> 4) & 0x0F;                                       \
+        }                                                                      \
+        return float_e2m1_t::bitcast(value4);                                  \
+    }                                                                          \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static void set_element(fixed_vuint8mf##LMUL##_t &array,                   \
+                            const TIndex &index,                               \
+                            float_e2m1_t value) noexcept {                     \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        using Storage = typename float_e2m1_t::Storage;                        \
+        const auto offset = (size_t)index[dim_zero];                           \
+        Storage &byte = array[offset >> 1];                                    \
+        Storage v = value.raw() & 0x0F;                                        \
+        bool is_low = (offset % 2 == 0);                                       \
+        if (is_low) {                                                          \
+            byte = (byte & 0xF0) | v;                                          \
+        } else {                                                               \
+            byte = (byte & 0x0F) | (v << 4);                                   \
+        }                                                                      \
+    }                                                                          \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+#if not defined(NNCASE_XPU_MODULE)
+DEFINE_FLOAT_E2M1_VECTOR_MF(2)
+DEFINE_FLOAT_E2M1_VECTOR_MF(4)
+DEFINE_FLOAT_E2M1_VECTOR_MF(8)
+DEFINE_FLOAT_E2M1_VECTOR_M(1)
+DEFINE_FLOAT_E2M1_VECTOR_M(2)
+DEFINE_FLOAT_E2M1_VECTOR_M(4)
+DEFINE_FLOAT_E2M1_VECTOR_M(8)
+#endif
+
 #endif
